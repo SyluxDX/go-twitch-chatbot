@@ -22,5 +22,12 @@ func main() {
 	}
 	fmt.Printf("%+v\n", config)
 
-	twitch.Client(config.TwitchIRL, config.Channel)
+	// twitch.Client(config.TwitchIRL, config.Channel)
+
+	client, err := twitch.LoadConfigurations(configsPath)
+	if err != nil {
+		log.Panicln(err)
+	}
+	fmt.Printf("%+v\n", client)
+	client.ReadChat()
 }
