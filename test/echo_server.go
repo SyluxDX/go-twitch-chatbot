@@ -33,7 +33,7 @@ func echoHandler(conn net.Conn) {
 		case t := <-ticker.C:
 			log.Printf("tick at %s\n", t)
 			// buffWriter.WriteString("PING")
-			conn.Write([]byte(fmt.Sprintln("PING")))
+			conn.Write([]byte(fmt.Sprintln("PING :tmi.twitch.tv")))
 			// wait for PONG
 			conn.SetReadDeadline(time.Now().Add(timeoutDuration))
 			bytes, err := buffReader.ReadBytes('\n')
@@ -42,7 +42,7 @@ func echoHandler(conn net.Conn) {
 				return
 			}
 			line := strings.TrimSpace(string(bytes))
-			if line != "PONG" {
+			if line != "PONG :tmi.twitch.tv" {
 				log.Println("Missing PONG response")
 				return
 			}

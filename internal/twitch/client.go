@@ -41,7 +41,7 @@ func (conf TwitchConfigs) ReadChat() {
 		if strings.HasSuffix(line, "End of /NAMES list") {
 			connected = true
 		}
-		// log.Println(line)
+		log.Println(line)
 		if connected {
 			break
 		}
@@ -58,9 +58,8 @@ func (conf TwitchConfigs) ReadChat() {
 			break
 		}
 		line := string(bytes)
-		// write to output file
-
 		match := msgPattern.FindStringSubmatch(line)
+		// log.Println(line)
 		if len(match) == 0 {
 			log.Println(line)
 		} else {

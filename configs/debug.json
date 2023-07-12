@@ -1,4 +1,5 @@
 {
     "twicthIrc": "irc.chat.twitch.tv:6667",
-    "channel": "mudda_tm"
+    "channel": "mudda_tm",
+    "debug": true
 }

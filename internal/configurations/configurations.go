@@ -8,6 +8,7 @@ import (
 type Configs struct {
 	TwitchIRL string `json:"twicthIrc"`
 	Channel   string `json:"channel"`
+	Debug     bool   `json:"debug"`
 }
 
 // LoadConfigurations
