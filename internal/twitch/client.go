@@ -5,14 +5,40 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"regexp"
+	"os"
+	"os/signal"
 	"strings"
 )
 
-// func joinChannel(conn net.Conn) error {
+type chatMsg struct {
+	source     string
+	command    string
+	subcommand string
+	message    string
+}
 
-// 	return nil
-// }
+func parseMessage(line string) chatMsg {
+	parsed := chatMsg{}
+	if strings.HasPrefix(line, ":") {
+		sline := strings.Split(line, " :")
+		// msg
+		if len(sline) == 2 {
+			parsed.message = sline[1]
+		}
+		// cmd
+		scmd := strings.SplitN(sline[0], " ", 3)
+		parsed.source = scmd[0]
+		parsed.command = scmd[1]
+		parsed.subcommand = scmd[2]
+
+	} else {
+		scmd := strings.SplitN(line, " ", 2)
+		parsed.command = scmd[0]
+		parsed.subcommand = scmd[1]
+	}
+
+	return parsed
+}
 
 func (conf TwitchConfigs) ReadChat() {
 	// init
@@ -20,37 +46,44 @@ func (conf TwitchConfigs) ReadChat() {
 	if err != nil {
 		log.Panicln("ERROR", err)
 	}
-	defer conn.Close()
+	// defer cleanup
+	// channel for os signals
+	chn := make(chan os.Signal)
+	signal.Notify(chn, os.Interrupt)
+	// cleanup
+	go func(conn net.Conn) {
+		<-chn
+		log.Println("Clossing connection")
+		conn.Close()
+	}(conn)
+
 	// join channel
 	log.Printf("Joinning Channel %s\n", conf.Channel)
-	loginMsg := fmt.Sprintf("PASS %s\r\nNICK %s\r\nJOIN #%s\r\n", "justinfan6493", "justinfan6493", conf.Channel)
-	conn.Write([]byte(loginMsg))
+	fmt.Fprintf(conn, "PASS %s\r\nNICK %s\r\nJOIN #%s\r\n", "justinfan6493", "justinfan6493", conf.Channel)
 
 	buffReader := bufio.NewReader(conn)
-	// var data []byte
-	// Process init list of names
-	connected := false
-	for {
+	for connecting := true; connecting; {
 		bytes, _, err := buffReader.ReadLine()
 		if err != nil {
 			log.Println("ERROR", err)
-			connected = true
-
+			connecting = false
 		}
 		line := string(bytes)
-		if strings.HasSuffix(line, "End of /NAMES list") {
-			connected = true
+		parsedMsg := parseMessage(line)
+		if conf.Debug {
+			log.Printf("C:%s %s\n", parsedMsg.command, parsedMsg.message)
 		}
-		log.Println(line)
-		if connected {
-			break
+		if parsedMsg.command == "366" {
+			// End of /Names list
+			connecting = false
+			if conf.Debug {
+				fmt.Println()
+			}
 		}
 	}
 
 	// read block
 	log.Println("Echo messages")
-	msgPattern := regexp.MustCompile(`:(?P<user>.+)!\S+ PRIVMSG #\S+ :(?P<msg>.*)`)
-	// msgPattern := regexp.MustCompile(`:(.+)!\S+ PRIVMSG #\S+ :(.*)`)
 	for {
 		bytes, _, err := buffReader.ReadLine()
 		if err != nil {
@@ -58,15 +91,26 @@ func (conf TwitchConfigs) ReadChat() {
 			break
 		}
 		line := string(bytes)
-		match := msgPattern.FindStringSubmatch(line)
-		// log.Println(line)
-		if len(match) == 0 {
-			log.Println(line)
-		} else {
-			fmt.Printf("%s:> %s\n", match[msgPattern.SubexpIndex("user")], match[msgPattern.SubexpIndex("msg")])
+		parsedMsg := parseMessage(line)
+		switch parsedMsg.command {
+		case "PING":
+			// respond with PONG
+			pong := fmt.Sprintf("PONG %s", parsedMsg.subcommand)
+			conn.Write([]byte(pong))
+		case "PRIVMSG":
+			// get user
+			user := parsedMsg.source[1:strings.Index(parsedMsg.source, "!")]
+			fmt.Printf("%s:> %s\n", user, parsedMsg.message)
+		case "001":
+			// Logged in (successfully authenticated).
+			fallthrough
+		case "002", "003", "004":
+			fallthrough
+		case "353":
+			// Tells you who else is in the chat room you're joining.
+			fallthrough
+		case "366", "372", "375", "376":
+			fmt.Printf("C:%s %s\n", parsedMsg.command, parsedMsg.message)
 		}
-		// fmt.Println(string(bytes), "->", match)
-		// fmt.Printf("%s:> %s\n", match[0], match[1])
-		// log.Println(string(bytes))
 	}
 }
