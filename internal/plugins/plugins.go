@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"time"
 )
@@ -13,8 +12,16 @@ type Plugins struct {
 }
 
 func (plg *Plugins) current_time(_ string) string {
-	log.Println("call Current time")
 	return time.Now().String()
+}
+
+func (plg *Plugins) uptime(_ string) string {
+	start, ok := plg.Data["uptime"].(time.Time)
+	if !ok {
+		plg.Data["uptime"] = time.Now()
+	}
+	duration := time.Since(start)
+	return time.Time{}.Add(duration).Format("15:04:05")
 }
 
 func LoadPlugins(filepath string) (*Plugins, error) {
@@ -41,6 +48,11 @@ func LoadPlugins(filepath string) (*Plugins, error) {
 		case "current_time":
 			if enable == true {
 				plugs.Commands["time"] = plugs.current_time
+			}
+		case "uptime":
+			if enable == true {
+				plugs.Commands["uptime"] = plugs.uptime
+				plugs.Data["uptime"] = time.Now()
 			}
 		}
 	}

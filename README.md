@@ -7,9 +7,10 @@
 
 # Plugins
 
-| Chat command | Description                | 
-| ------------ | -------------------------- |
-| time         | Display Current local time |
+| Chat command | Description                  | 
+| ------------ | ---------------------------- |
+| time         | Display Current local time   |
+| uptime       | Dislpay bot running duration |
 
 # Rate limits
 

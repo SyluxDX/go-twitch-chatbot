@@ -46,12 +46,11 @@ func (conf *TwitchConfigs) checkCommand(msg string) (string, bool) {
 	// check if msg are invoking command
 	if strings.HasPrefix(msg, "!") {
 		split := strings.SplitN(msg, " ", 2)
-		cmd := split[0]
+		cmd := split[0][1:]
 		opts := ""
 		if len(split) == 2 {
 			opts = split[1]
 		}
-
 		cmdCall, ok := conf.Plugins.Commands[cmd]
 		if ok {
 			return cmdCall.(func(string) string)(opts), true
