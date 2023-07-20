@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/SyluxDX/go-twitch-chatbot/internal/plugins"
 	"github.com/SyluxDX/go-twitch-chatbot/internal/twitch"
 )
 
-var banner string = `  _____          _ _       _        ____ _           _   ____        _
+var banner string = `
+  _____          _ _       _        ____ _           _   ____        _
  |_   _|_      _(_) |_ ___| |__    / ___| |__   __ _| |_| __ )  ___ | |_
    | | \ \ /\ / / | __/ __| '_ \  | |   | '_ \ / _  | __|  _ \ / _ \| __|
    | |  \ V  V /| | || (__| | | | | |___| | | | (_| | |_| |_) | (_) | |_
@@ -17,18 +19,26 @@ var banner string = `  _____          _ _       _        ____ _           _   __
 
 func main() {
 	fmt.Println(banner)
-	var configsPath string
+	var clientConfigsPath string
+	var plugsConfigsPath string
 	// Executable Flags
-	flag.StringVar(&configsPath, "c", "configs/configs.json", "Path to configuration json file")
+	flag.StringVar(&clientConfigsPath, "c", "configs/configs.json", "Path to client configuration json file")
+	flag.StringVar(&plugsConfigsPath, "p", "configs/plugins.json", "Path to plugins configuration json file")
 	flag.Parse()
 
 	log.Println("Loading configurations")
-	client, err := twitch.LoadConfigurations(configsPath)
+	client, err := twitch.LoadConfigurations(clientConfigsPath)
 	if err != nil {
 		log.Panicln(err)
 	}
-	// log.Println("Loading Commands macros")
-	// plugins := LoadCommands()
+	log.Println("Loading Commands macros")
+	plugins, err := plugins.LoadPlugins(plugsConfigsPath)
+	if err != nil {
+		log.Panicln(err)
+	}
+	client.Plugins = *plugins
 	// client.ReadChat(plugins)
+	log.Printf("%+v\n", plugins.Commands)
+	log.Println(client.Channel)
 	client.ReadChat()
 }

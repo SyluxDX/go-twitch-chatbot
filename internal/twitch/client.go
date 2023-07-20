@@ -42,6 +42,25 @@ func parseMessage(line string) chatMsg {
 	return parsed
 }
 
+func (conf *TwitchConfigs) checkCommand(msg string) (string, bool) {
+	// check if msg are invoking command
+	if strings.HasPrefix(msg, "!") {
+		split := strings.SplitN(msg, " ", 2)
+		cmd := split[0]
+		opts := ""
+		if len(split) == 2 {
+			opts = split[1]
+		}
+
+		cmdCall, ok := conf.Plugins.Commands[cmd]
+		if ok {
+			return cmdCall.(func(string) string)(opts), true
+		}
+	}
+	// else
+	return "", false
+}
+
 func (conf TwitchConfigs) ReadChat() {
 	// init
 	conn, err := net.Dial("tcp", conf.TwitchIRL)
@@ -109,6 +128,10 @@ func (conf TwitchConfigs) ReadChat() {
 			case "PRIVMSG":
 				// get user
 				user := parsedMsg.source[1:strings.Index(parsedMsg.source, "!")]
+				// check if message is command
+				if response, ok := conf.checkCommand(parsedMsg.message); ok {
+					log.Println(response)
+				}
 				if request {
 					fmt.Printf("%s:> %s\n", user, parsedMsg.message)
 				}
