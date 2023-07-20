@@ -5,6 +5,11 @@
 | **SSL**     | wss://irc-ws.chat.twitch.tv:443 | irc://irc.chat.twitch.tv:6697 |
 | **Non SSL** | ws://irc-ws.chat.twitch.tv:80   | irc://irc.chat.twitch.tv:6667 |
 
+# Plugins
+
+| Chat command | Description                | 
+| ------------ | -------------------------- |
+| time         | Display Current local time |
 
 # Rate limits
 
