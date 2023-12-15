@@ -19,7 +19,7 @@ func main() {
 	fmt.Println(banner)
 	var configsPath string
 	// Executable Flags
-	flag.StringVar(&configsPath, "c", "configs/configs.json", "Path to configuration json file")
+	flag.StringVar(&configsPath, "c", "configs.json", "Path to configuration json file")
 	flag.Parse()
 
 	log.Println("Loading configurations")
