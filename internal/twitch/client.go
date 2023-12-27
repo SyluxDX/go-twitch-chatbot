@@ -45,6 +45,9 @@ func NewClient(irl, channel string, debug bool, writerMain func(string), writerC
 // Parse chat message into source, command , subcommand and message
 func parseMessage(line string) chatMsg {
 	parsed := chatMsg{}
+	if line == "" {
+		return parsed
+	}
 	if strings.HasPrefix(line, ":") {
 		sline := strings.Split(line, " :")
 		// msg
@@ -158,7 +161,7 @@ func (client *TwitchClient) ReadChat() {
 		switch parsedMsg.command {
 		case "PING":
 			// respond with PONG
-			pong := fmt.Sprintf("PONG %s", parsedMsg.subcommand)
+			pong := fmt.Sprintf("PONG %s\n", parsedMsg.subcommand)
 			client.Conn.Write([]byte(pong))
 		case "PRIVMSG":
 			// get user

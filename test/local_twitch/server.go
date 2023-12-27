@@ -17,7 +17,6 @@ func connectChannel(conn net.Conn) (string, error) {
 	var pass, channel, nick string
 	timeoutDuration := 1 * time.Second
 	buffReader := bufio.NewReader(conn)
-	log.Println("starting connection")
 	for connecting := true; connecting; {
 		conn.SetReadDeadline(time.Now().Add(timeoutDuration))
 		// read data
@@ -37,7 +36,6 @@ func connectChannel(conn net.Conn) (string, error) {
 			}
 
 		} else {
-			log.Println(strings.TrimSpace(line))
 			split := strings.Split(strings.TrimSpace(line), " ")
 			if split[0] == "PASS" {
 				pass = split[1]
@@ -48,7 +46,6 @@ func connectChannel(conn net.Conn) (string, error) {
 			}
 
 			if pass != "" && nick != "" && channel != "" {
-				log.Println("connection done, sending initial msg")
 				// send initial lines
 				conn.Write([]byte(fmt.Sprintf(":tmi.twitch.tv 001 %s :Welcome, GLHF!\n", nick)))
 				conn.Write([]byte(fmt.Sprintf(":tmi.twitch.tv 002 %s :Your host is tmi.twitch.tv\n", nick)))
