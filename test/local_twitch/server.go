@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var interactive bool
+
 func connectChannel(conn net.Conn) (string, error) {
 	var pass, channel, nick string
 	timeoutDuration := 1 * time.Second
@@ -126,8 +128,9 @@ func clientHandler(conn net.Conn, sendMsg chan string) {
 	for running {
 		select {
 		case t := <-watchdog.C:
-			log.Printf("tick at %s\n", t)
-			// buffWriter.WriteString("PING")
+			if !interactive {
+				log.Printf("tick at %s\n", t)
+			}
 			conn.Write([]byte(fmt.Sprintln("PING :tmi.twitch.tv")))
 			// wait for PONG
 			waitingPong = true
@@ -145,7 +148,9 @@ func clientHandler(conn net.Conn, sendMsg chan string) {
 				} else {
 					waitingPong = false
 					pongTimer.Stop()
-					log.Println("Pong received")
+					if !interactive {
+						log.Println("Pong received")
+					}
 				}
 			} else {
 				log.Printf(">> %s", msg)
@@ -179,10 +184,23 @@ func loremGenerator(output chan string) {
 	}
 }
 
+func interactiveConsole(output chan string) {
+	// set console reader
+	console := bufio.NewReader(os.Stdin)
+	for {
+		// read user input
+		fmt.Print("> ")
+		line, _ := console.ReadString('\n')
+		// send to channel
+		output <- string(line)
+	}
+}
+
 func main() {
 	var address, port string
 	flag.StringVar(&address, "address", "127.0.0.1", "Local Server address")
 	flag.StringVar(&port, "port", "8888", "Local Server port")
+	flag.BoolVar(&interactive, "i", false, "Set output message to interactive")
 	flag.Parse()
 
 	log.Printf("Starting Local server at port: %s\n", port)
@@ -195,7 +213,11 @@ func main() {
 	defer listener.Close()
 
 	text := make(chan string, 1)
-	go loremGenerator(text)
+	if interactive {
+		go interactiveConsole(text)
+	} else {
+		go loremGenerator(text)
+	}
 
 	for {
 		// listen for an connection
