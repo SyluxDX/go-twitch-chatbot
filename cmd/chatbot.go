@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/SyluxDX/go-twitch-chatbot/internal/configurations"
+	"github.com/SyluxDX/go-twitch-chatbot/internal/plugins"
 	"github.com/SyluxDX/go-twitch-chatbot/internal/twitch"
 )
 
@@ -33,7 +34,12 @@ func main() {
 	// set file watchdog
 	go configurations.FileWatch(configsPath, configs.Reload)
 
-	// log.Println("Loading Commands macros")
+	log.Println("Loading plugins")
+	plugins, err := plugins.LoadPlugins(&configs.Plugins)
+	if err != nil {
+		log.Panicln(err)
+	}
+	log.Printf("%+v\n", plugins)
 	// plugins := LoadCommands()
 	// client.ReadChat(plugins)
 
@@ -49,12 +55,13 @@ func main() {
 		ui.WriteMain,
 		ui.WriteCmd,
 		ui.WriteSide,
+		&configs.Plugins,
 	)
 	defer client.Close()
 
 	// start twitch client
 	go client.StartBot(uiStarted)
 
-	// start graphica interface
+	// start graphical interface
 	ui.Start(uiStarted)
 }

@@ -14,4 +14,4 @@ clean:
 	rm -rf build/*
 
 debug:
-	go run ./cmd/ -c configs/debug.json 
+	go run ./cmd/ -t -c configs/debug.json 

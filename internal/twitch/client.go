@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/SyluxDX/go-twitch-chatbot/internal/plugins"
 )
 
 type TwitchClient struct {
@@ -18,7 +20,7 @@ type TwitchClient struct {
 	WriterMain   func(string)
 	WriterCmd    func(string)
 	WriterConfig func(string, ...bool)
-	Plugins      []string
+	Plugins      *plugins.Plugins
 }
 
 type chatMsg struct {
@@ -29,7 +31,8 @@ type chatMsg struct {
 }
 
 // NewClient creates a Twitch Client and sets desired configurations
-func NewClient(irl, channel string, debug bool, writerMain func(string), writerCmd func(string), writerConfig func(string, ...bool)) *TwitchClient {
+func NewClient(irl, channel string, debug bool, writerMain func(string), writerCmd func(string), writerConfig func(string, ...bool), pluginsConfig *plugins.PluginsConfigurations) *TwitchClient {
+	var err error
 	client := TwitchClient{
 		TwitchIRL:    irl,
 		Channel:      channel,
@@ -37,7 +40,10 @@ func NewClient(irl, channel string, debug bool, writerMain func(string), writerC
 		WriterMain:   writerMain,
 		WriterCmd:    writerCmd,
 		WriterConfig: writerConfig,
-		Plugins:      make([]string, 0),
+	}
+	client.Plugins, err = plugins.LoadPlugins(pluginsConfig)
+	if err != nil {
+		panic(err)
 	}
 	return &client
 }
@@ -78,9 +84,7 @@ func (client *TwitchClient) WriteCurrentConfigs() {
 	client.WriterConfig(fmt.Sprintf(" Channel: %s\n", client.Channel))
 	client.WriterConfig(fmt.Sprintf(" Debug mode: %v\n", client.Debug))
 	client.WriterConfig("\nPlugins:\n")
-	for _, plugin := range client.Plugins {
-		client.WriterConfig(fmt.Sprintf(" %s\n", plugin))
-	}
+	client.WriterConfig(client.Plugins.PrintOptions())
 }
 
 func (client *TwitchClient) StartBot(uiStarted chan struct{}) error {
@@ -167,6 +171,19 @@ func (client *TwitchClient) ReadChat() {
 			// get user
 			user := parsedMsg.source[1:strings.Index(parsedMsg.source, "!")]
 			client.WriterMain(fmt.Sprintf("%s:> %s\n", user, parsedMsg.message))
+			// check for commands
+			if strings.HasPrefix(parsedMsg.message, "!") {
+				// extract command
+				splitCmd := strings.SplitN(parsedMsg.message, " ", 1)
+				// append empty string to sent to no argument plugins
+				splitCmd = append(splitCmd, "")
+				// execute command
+				if plg, ok := client.Plugins.Commands[splitCmd[0][1:]]; ok {
+					resl := plg(splitCmd[1])
+					client.WriterCmd(resl)
+				}
+			}
+
 		case "001":
 			// Logged in (successfully authenticated).
 			fallthrough

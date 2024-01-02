@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+
+	"github.com/SyluxDX/go-twitch-chatbot/internal/plugins"
 )
 
 type TwitchConfigs struct {
-	TwitchIRL string `json:"twicthIrc"`
-	Channel   string `json:"channel"`
-	Debug     bool   `json:"debug"`
+	TwitchIRL string                        `json:"twicthIrc"`
+	Channel   string                        `json:"channel"`
+	Debug     bool                          `json:"debug"`
+	Plugins   plugins.PluginsConfigurations `json:"plugins"`
 }
 
 // Load reads and parse configuration json file
